@@ -1,0 +1,50 @@
+FROM python:3.9-alpine
+
+LABEL maintainer="Trino ODBC Driver"
+LABEL version="1.0.0"
+LABEL description="Python-based Trino ODBC Driver for Alpine Linux"
+
+# Install system dependencies
+RUN apk update && apk add --no-cache \
+    build-base \
+    unixodbc \
+    unixodbc-dev \
+    curl \
+    ca-certificates \
+    bash
+
+# Create app directory
+WORKDIR /app
+
+# Copy requirements file
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY trino_odbc_driver.py .
+
+# Create log directory
+RUN mkdir -p /var/log
+
+# Expose the API port
+EXPOSE 8991
+
+# Set environment variables for unixODBC
+ENV ODBCSYSINI=/etc/odbc
+ENV ODBCINI=/etc/odbc/odbc.ini
+ENV ODBCSYSINSTINI=/etc/odbc/odbcinst.ini
+
+# Create ODBC configuration directories
+RUN mkdir -p /etc/odbc
+
+# Create ODBC configuration files
+RUN echo "[ODBC Drivers]\nTrino ODBC Driver = Installed\n\n[Trino ODBC Driver]\nDriver = /app/trino_odbc_driver.py\nSetup = /app/trino_odbc_driver.py\nDescription = Trino ODBC Driver for Alpine Linux\n" > /etc/odbc/odbcinst.ini
+RUN echo "[ODBC Data Sources]\nTrino = Trino ODBC Driver\n\n[Trino]\nDriver = Trino ODBC Driver\nDescription = Trino ODBC Driver for Alpine Linux\nServer = localhost\nPort = 8991\n" > /etc/odbc/odbc.ini
+
+# Set entrypoint
+ENTRYPOINT ["python", "trino_odbc_driver.py"]
+
+# Default command
+CMD ["--host", "0.0.0.0", "--port", "8991"]
