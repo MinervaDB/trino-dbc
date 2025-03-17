@@ -1,0 +1,7 @@
+# Python dependencies for Trino ODBC Driver
+flask==2.0.1
+trino==0.315.0
+pyodbc==4.0.32
+gunicorn==20.1.0
+requests==2.26.0
+python-dotenv==0.19.0
